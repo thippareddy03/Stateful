@@ -2,25 +2,25 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: books-db
+  name: users-db
 spec:
   minReadySeconds: 5
   replicas: 3
   selector:
     matchLabels:
-      name: books-db
-  serviceName: books-svc
+      name: users-db
+  serviceName: users-svc
   template:
     metadata:
       labels:
-        name: books-db
+        name: users-db
     spec:
       containers:
-        - name: booksdb
+        - name: usersdb
           image: postgres:15-alpine
           envFrom:
             - secretRef:
-                name: books-secret
+                name: users-secret
           ports:
             - containerPort: 5432
           readinessProbe:
@@ -43,11 +43,11 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           volumeMounts:
-            - name: books-vol
+            - name: users-vol
               mountPath: /var/lib/postgresql/data
   volumeClaimTemplates:
     - metadata:
-        name: books-vol
+        name: users-vol
       spec:
         accessModes:
           - ReadWriteOnce
@@ -59,7 +59,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: books-svc
+  name: users-svc
 spec:
   clusterIP: None
   ports:
@@ -68,4 +68,5 @@ spec:
       protocol: TCP
       targetPort: 5432
   selector:
-      name: books-db
+    matchLabels:
+      name: users-db
