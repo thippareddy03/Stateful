@@ -1,0 +1,70 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: books-db
+spec:
+  minReadySeconds: 5
+  selector:
+    matchLabels:
+      name: books-db
+  template:
+    metadata:
+      labels:
+        name: books-db
+    spec:
+      containers:
+        - name: booksdb
+          image: postgres:15-alpine
+          envFrom:
+            - secretRef:
+                name: books-secret
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            initialDelaySeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+            tcpSocket:
+              port: 5432
+          startupProbe:
+            initialDelaySeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+            tcpSocket:
+              port: 5432
+          resources:
+            requests:
+              memory: "24Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: books-vol
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: books-vol
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: managed
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: books-svc
+spec:
+  clusterIP: None
+  ports:
+    - name: TCP
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+  selector:
+    matchLabels:
+      name: books-db
